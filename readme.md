@@ -5,20 +5,27 @@
 `tlacli` is a tool for running the TLC model checker from the command line. You can already run TLC from the command line, anyway, using `tlc2.TLC`, and `tlacli` only provides a subset of the functionality. It still has a few UX improvements, though:
 
 1. Nicer flag UX. Arguments follow the conventional "flag" format. You can spot-check a spec with just `python tlacli.py specfile.tla`. 
-1. Saner defaults. It automatically uses `Spec` as your temporal formula, [TODO defaults to using a worker per CPU core], cleans up the `states` directory,
+1. Saner defaults. It automatically uses `Spec` as your temporal formula, defaults to using a worker per CPU core, gives terse output, etc.
 1. You don't have to write a config file. You can define invariants, properties, and constants as command-line flags and `tlacli` will automatically build the proper config file for that run. You can also save the configuration as a template for future runs. You can also use _both_ a config file and flags, where the config is a template and the flags are specializations.
 
 ## Setup
 
-You need Java and Python 3.8. There's no package, just clone and run with `python tlacli.py`.
+You need Java and Python 3.8. There's no package, just clone and run.
 
 ## Using
 
-**You need to be in the directory with the spec**. IIRC there's something in the tla+ issue tracker about this, but I haven't searched yet. Run with
+```
+python tlacli.py specfile.tla
+```
+
+**You cannot pass in a path.** The following will _not_ work:
 
 ```
-python tlacli.py specfile.tla # no ./ first
+# Bad
+python tlacli.py ./specfile.tla
 ```
+
+(IIRC this is a known issue with TLC but I haven't investigated yet. This means you can only run it while in the same directory as `specfile`. You don't need to be in the same directory as `tlacli.py`.)
 
 By default, this runs `specfile.tla` with the specification `Spec`. You can change the run specification with the `--spec` flag. By default, this runs TLC with the `-terse` and `-cleanup` flags. The config file will be saved as `temporary.cfg`. You can change the filename with `--cfg-out {name}`.
 
@@ -43,7 +50,6 @@ You can assign constants with `--constant {name} {value}`. Each constant must be
 ```
 python tlacli.py --constant Max 4 --constant Threads '{1, 2}' specfile.tla
 python tlacli.py --constant Colors '{\"red\", \"green\"}' specfile.tla
-
 ```
 
 #### Model Values
@@ -93,10 +99,9 @@ Eh make a PR or something
 * Translating PlusCal (probably means implementing subparsers)
 * Get the "no-inv" flags working
 * Implement and document all the TLC options here: https://lamport.azurewebsites.net/tla/tlc-options.html
-* "Set of Model Values" affordance flag [[unecessary, document this]]
 * Symmetry model sets
 * More post-run cleanup
-* Automatically calculate base number of workers per run
+* Maybe use fewer workers per run
 * Advanced config options:
     * VIEW (chaos reigns)
     * Operator Overrides / Constant Operators
@@ -104,3 +109,9 @@ Eh make a PR or something
     * SYMMETRY
 * Explanations on what you can and can't assign in a config file (anything that doesn't require `EXTENDS`, I think)
 * Writing on landmines and stuff
+
+## Out of Scope
+
+* INIT-NEXT config
+* TLAPS and tla2tex
+* Toolbox-only features like profiling, running in the cloud, trace explorer, "evaluate constant expression"
