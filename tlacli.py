@@ -71,7 +71,7 @@ def construct_cfg(args=None):
 
     # This doesn't preserve ordering. MVP
     # We use list(set()) to uniquify the list
-    
+
     cfg_dict["invariants"] += args.invariant
     cfg_dict["invariants"] = unique(cfg_dict["invariants"])
 
@@ -89,7 +89,7 @@ def construct_cfg(args=None):
     out = [f"SPECIFICATION {cfg_dict['spec']}"]
     for inv in cfg_dict["invariants"]:
         out.append(f"INVARIANT {inv}")
-    
+
     for prop in cfg_dict["properties"]:
         out.append(f"PROPERTY {prop}")
 
@@ -152,12 +152,19 @@ print(cfg)
 with open(cfg_file, 'w') as f:
     f.write(cfg)
 
+# TLAtools requires the filename to be bare, without path, in the current working directory. If these things are true,
+spec_path = Path(args.Specfile)
+try:
+    if not spec_path.samefile(Path.cwd() / spec_path.name):
+        print("Specfile must exist in the current directory.")
+        sys.exit(1)
+except:
+    print("Specfile must exist in the current directory.")
+    sys.exit(1)
+
 # Actually run stuff
-
-
-
 jar_path = Path(sys.path[0], "tla2tools.jar")
-script = f"java -jar {jar_path} -workers {args.tlc_workers} -config {cfg_file} -terse -cleanup {args.Specfile}"
+script = f"java -jar {jar_path} -workers {args.tlc_workers} -config {cfg_file} -terse -cleanup {spec_path.name}"
 print(script)
 result = subprocess.call(script, shell=True)
 
