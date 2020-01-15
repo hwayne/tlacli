@@ -10,7 +10,7 @@
 
 ## Setup
 
-You need Java and Python 3.8. There's no package, just clone and run.
+You need Java and Python 3.7. There's no package, just clone and run.
 
 ## Using
 

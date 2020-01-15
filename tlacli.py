@@ -11,8 +11,6 @@ from typing import List, TypeVar
 
 T = TypeVar('T')
 
-# TODO, this seems to fail if you pass in a path. I think you need to be in the same directory or something for tlc to work
-
 def unique(l: List[T]) -> List[T]:
     return list(set(l))
 
@@ -115,11 +113,12 @@ tlc_args = parser.add_argument_group("tlc_args", "Runtime values for the TLC mod
 cfg_args.add_argument("--spec", "--specification", default="Spec", help="The TLA+ specification operator, defaults to Spec")
 cfg_args.add_argument("--cfg", help="A template cfg for default values")
 
-# Extend is python 3.8 only...
-cfg_args.add_argument("--invariant", default=[], action="extend", nargs='*', help="Adds argument as model invariant, may be specified multiple times")
-cfg_args.add_argument("--no-invariant", default=[], action="extend", help="Invariants that should NOT be checked")
-cfg_args.add_argument("--property", default=[], action="extend", nargs='*', help="Adds argument as model temporal property, may be specified multiple times")
-cfg_args.add_argument("--no-property", default=[], action="extend", help="Temporal Property that should NOT be checked")
+# action=extend is python 3.8 only...
+cfg_args.add_argument("--invariant", default=[], action="append", nargs='*', help="Adds argument as model invariant, may be specified multiple times")
+cfg_args.add_argument("--no-invariant", default=[], action="append", help="Invariants that should NOT be checked")
+cfg_args.add_argument("--property", default=[], action="append", nargs='*', help="Adds argument as model temporal property, may be specified multiple times")
+cfg_args.add_argument("--no-property", default=[], action="append", help="Temporal Property that should NOT be checked")
+
 
 # This needs to be append so we get them in pairs matching constants to their assignments
 cfg_args.add_argument("--constant", default=[], nargs=2, action="append", help='{name} {value}')
@@ -138,6 +137,14 @@ tlc_args.add_argument("--tlc-tool", action="store_true", help="If true, outputs 
 # TODO automatic TLC passthrough option. Would disable all the other tlc arguments except config
 
 args = parser.parse_args()
+
+# We need this because we're action=append properties,
+# So get [[a, b], [c]] instead of [a, b, c].
+# action=extend is 3.8 only
+
+args.property = flatten(args.property)
+args.invariant = flatten(args.invariant)
+
 
 # We need constants to be a list of tuples for flattening purposes
 # TODO make it a dict
