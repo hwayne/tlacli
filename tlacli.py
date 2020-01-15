@@ -71,7 +71,7 @@ def construct_cfg(args=None):
 
     # This doesn't preserve ordering. MVP
     # We use list(set()) to uniquify the list
-    
+
     cfg_dict["invariants"] += args.invariant
     cfg_dict["invariants"] = unique(cfg_dict["invariants"])
 
@@ -89,7 +89,7 @@ def construct_cfg(args=None):
     out = [f"SPECIFICATION {cfg_dict['spec']}"]
     for inv in cfg_dict["invariants"]:
         out.append(f"INVARIANT {inv}")
-    
+
     for prop in cfg_dict["properties"]:
         out.append(f"PROPERTY {prop}")
 
@@ -116,10 +116,10 @@ cfg_args.add_argument("--spec", "--specification", default="Spec", help="The TLA
 cfg_args.add_argument("--cfg", help="A template cfg for default values")
 
 # Extend is python 3.8 only...
-cfg_args.add_argument("--invariant", default=[], action="extend", nargs='*', help="Adds argument as model invariant, may be specified multiple times")
-cfg_args.add_argument("--no-invariant", default=[], action="extend", help="Invariants that should NOT be checked")
-cfg_args.add_argument("--property", default=[], action="extend", nargs='*', help="Adds argument as model temporal property, may be specified multiple times")
-cfg_args.add_argument("--no-property", default=[], action="extend", help="Temporal Property that should NOT be checked")
+#cfg_args.add_argument("--invariant", default=[], action="extend", nargs='*', help="Adds argument as model invariant, may be specified multiple times")
+#cfg_args.add_argument("--no-invariant", default=[], action="extend", help="Invariants that should NOT be checked")
+#cfg_args.add_argument("--property", default=[], action="extend", nargs='*', help="Adds argument as model temporal property, may be specified multiple times")
+#cfg_args.add_argument("--no-property", default=[], action="extend", help="Temporal Property that should NOT be checked")
 
 # This needs to be append so we get them in pairs matching constants to their assignments
 cfg_args.add_argument("--constant", default=[], nargs=2, action="append", help='{name} {value}')
@@ -152,14 +152,21 @@ print(cfg)
 with open(cfg_file, 'w') as f:
     f.write(cfg)
 
+# TLAtools requires the filename to be bare, without path, in the current working directory. If these things are true,
+spec_path = Path(args.Specfile)
+try:
+    if not spec_path.samefile(Path.cwd() / spec_path.name):
+        print("Specfile must exist in the current directory.")
+        sys.exit(1)
+except:
+    print("Specfile must exist in the current directory.")
+    sys.exit(1)
+
 # Actually run stuff
-
-
-
 jar_path = Path(sys.path[0], "tla2tools.jar")
-script = f"java -jar {jar_path} -workers {args.tlc_workers} -config {cfg_file} -terse -cleanup {args.Specfile}"
+script = f"java -jar {jar_path} -workers {args.tlc_workers} -config {cfg_file} -terse -cleanup {spec_path.name}"
 print(script)
-result = subprocess.call(script, shell=True)
+#result = subprocess.call(script, shell=True)
 
 sys.exit(result)
 # Does this create an empty folder even when we cleanup the states?
