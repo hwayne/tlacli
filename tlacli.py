@@ -116,10 +116,10 @@ cfg_args.add_argument("--spec", "--specification", default="Spec", help="The TLA
 cfg_args.add_argument("--cfg", help="A template cfg for default values")
 
 # Extend is python 3.8 only...
-#cfg_args.add_argument("--invariant", default=[], action="extend", nargs='*', help="Adds argument as model invariant, may be specified multiple times")
-#cfg_args.add_argument("--no-invariant", default=[], action="extend", help="Invariants that should NOT be checked")
-#cfg_args.add_argument("--property", default=[], action="extend", nargs='*', help="Adds argument as model temporal property, may be specified multiple times")
-#cfg_args.add_argument("--no-property", default=[], action="extend", help="Temporal Property that should NOT be checked")
+cfg_args.add_argument("--invariant", default=[], action="extend", nargs='*', help="Adds argument as model invariant, may be specified multiple times")
+cfg_args.add_argument("--no-invariant", default=[], action="extend", help="Invariants that should NOT be checked")
+cfg_args.add_argument("--property", default=[], action="extend", nargs='*', help="Adds argument as model temporal property, may be specified multiple times")
+cfg_args.add_argument("--no-property", default=[], action="extend", help="Temporal Property that should NOT be checked")
 
 # This needs to be append so we get them in pairs matching constants to their assignments
 cfg_args.add_argument("--constant", default=[], nargs=2, action="append", help='{name} {value}')
@@ -166,7 +166,7 @@ except:
 jar_path = Path(sys.path[0], "tla2tools.jar")
 script = f"java -jar {jar_path} -workers {args.tlc_workers} -config {cfg_file} -terse -cleanup {spec_path.name}"
 print(script)
-#result = subprocess.call(script, shell=True)
+result = subprocess.call(script, shell=True)
 
 sys.exit(result)
 # Does this create an empty folder even when we cleanup the states?
