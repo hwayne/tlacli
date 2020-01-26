@@ -25,7 +25,6 @@ def extract_cfg(cfg_path: str):
     for line in cfg:
         line = line.strip()
         # Okay, okay, maybe the walrus operator is a good idea.
-        # If I stick with extends for argparse might as well use them, since we're stuck on 3.8 anyway then
 
         # SPECIFICATION
         match = re.match(r"SPECIFICATION (\w+)", line)
@@ -63,12 +62,13 @@ def construct_cfg(args=None):
             "spec": args.spec,
             "invariants": [],
             "properties": [],
-            "constants": [],
+            "constants": [], # dict()
             "model_values": [],
             }
 
     # This doesn't preserve ordering. MVP
     # We use list(set()) to uniquify the list
+    # We actually need to make a set operation for no-inv flags
 
     cfg_dict["invariants"] += args.invariant
     cfg_dict["invariants"] = unique(cfg_dict["invariants"])
@@ -76,7 +76,7 @@ def construct_cfg(args=None):
     cfg_dict["properties"] += args.property
     cfg_dict["properties"] = unique(cfg_dict["properties"])
 
-    cfg_dict["constants"] += args.constant
+    cfg_dict["constants"] += args.constant #dict.update
     cfg_dict["constants"] = unique(cfg_dict["constants"])
 
     # TODO overwrite exising model values from cfg
@@ -92,7 +92,7 @@ def construct_cfg(args=None):
         out.append(f"PROPERTY {prop}")
 
     if cfg_dict["model_values"]:
-        out.append("\nCONSTANTS \* model values")
+        out.append('\nCONSTANTS \* model values')
         for model in cfg_dict["model_values"]:
             out.append(f"  {model} = {model}")
 
@@ -136,45 +136,48 @@ tlc_args.add_argument("--tlc-tool", action="store_true", help="If true, outputs 
 # TODO --tlc-no-defaults
 # TODO automatic TLC passthrough option. Would disable all the other tlc arguments except config
 
-args = parser.parse_args()
+if __name__ == "__main__":
 
-# We need this because we're action=append properties,
-# So get [[a, b], [c]] instead of [a, b, c].
-# action=extend is 3.8 only
+    args = parser.parse_args()
 
-args.property = flatten(args.property)
-args.invariant = flatten(args.invariant)
+    # We need this because we're action=append properties,
+    # So get [[a, b], [c]] instead of [a, b, c].
+    # action=extend is 3.8 only
 
-
-# We need constants to be a list of tuples for flattening purposes
-# TODO make it a dict
-args.constant = [(x, y) for x, y in args.constant]
+    args.property = flatten(args.property)
+    args.invariant = flatten(args.invariant)
 
 
-cfg = construct_cfg(args=args)
-# We don't use the temporary module because it closes the file when we're done, and we need to pass a filepath into tlc.
-cfg_file = args.cfg_out
+    # We need constants to be a list of tuples for flattening purposes
+    # TODO make it a dict
+    args.constant = [(x, y) for x, y in args.constant]
+    #args.constant = [{x: y} for x, y in args.constant]
 
-print(cfg)
-with open(cfg_file, 'w') as f:
-    f.write(cfg)
 
-# TLAtools requires the filename to be bare, without path, in the current working directory. If these things are true,
-spec_path = Path(args.Specfile)
-try:
-    if not spec_path.samefile(Path.cwd() / spec_path.name):
+    cfg = construct_cfg(args=args)
+    # We don't use the temporary module because it closes the file when we're done, and we need to pass a filepath into tlc.
+    cfg_file = args.cfg_out
+
+    print(cfg)
+    with open(cfg_file, 'w') as f:
+        f.write(cfg)
+
+    # TLAtools requires the filename to be bare, without path, in the current working directory. If these things are true,
+    spec_path = Path(args.Specfile)
+    try:
+        if not spec_path.samefile(Path.cwd() / spec_path.name):
+            print("Specfile must exist in the current directory.")
+            sys.exit(1)
+    except:
         print("Specfile must exist in the current directory.")
         sys.exit(1)
-except:
-    print("Specfile must exist in the current directory.")
-    sys.exit(1)
 
-# Actually run stuff
-jar_path = Path(sys.path[0], "tla2tools.jar")
-script = f"java -jar {jar_path} -workers {args.tlc_workers} -config {cfg_file} -terse -cleanup {spec_path.name}"
-print(script)
-result = subprocess.call(script, shell=True)
+    # Actually run stuff
+    jar_path = Path(sys.path[0], "tla2tools.jar")
+    script = f"java -jar {jar_path} -workers {args.tlc_workers} -config {cfg_file} -terse -cleanup {spec_path.name}"
+    print(script)
+    result = subprocess.call(script, shell=True)
 
-sys.exit(result)
-# Does this create an empty folder even when we cleanup the states?
-# TODO remove temporary if flag enabled
+    sys.exit(result)
+    # Does this create an empty folder even when we cleanup the states?
+    # TODO remove temporary if flag enabled
