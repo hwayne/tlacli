@@ -76,9 +76,8 @@ def flags_to_dict_form(args=None) -> dict:
         "model_values": args.model_values,
     }
 
-def construct_cfg(flag_cfg=None, *, template_cfg=None, without={}):
+def construct_cfg(flag_cfg=None, *, template_cfg=None):
     """This returns the cfg that should be constructed, based on the input template.
-    without is what to _remove_
     All conflicts resolved in favor of flags."""
     if template_cfg:
         cfg_dict = deepcopy(template_cfg)
@@ -141,9 +140,7 @@ cfg_args.add_argument("--cfg", help="A template cfg for default values")
 
 # action=extend is python 3.8 only...
 cfg_args.add_argument("--invariant", default=[], action="append", nargs='*', help="Adds argument as model invariant, may be specified multiple times")
-cfg_args.add_argument("--no-invariant", default=[], action="append", help="Invariants that should NOT be checked")
 cfg_args.add_argument("--property", default=[], action="append", nargs='*', help="Adds argument as model temporal property, may be specified multiple times")
-cfg_args.add_argument("--no-property", default=[], action="append", help="Temporal Property that should NOT be checked")
 
 
 # This needs to be append so we get them in pairs matching constants to their assignments
