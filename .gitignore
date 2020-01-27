@@ -3,3 +3,6 @@ venv-tlacli/
 states/
 temp.cfg
 junk/
+__pycache__
+.pytest_cache
+.hypothesis

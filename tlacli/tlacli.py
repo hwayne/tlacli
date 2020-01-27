@@ -3,8 +3,9 @@ import os
 import re
 import subprocess
 import sys
-from collections import defaultdict
+
 from itertools import chain
+from copy import deepcopy
 from multiprocessing import cpu_count  # For default number of worker threads
 from pathlib import Path
 from typing import List, TypeVar
@@ -17,14 +18,26 @@ def unique(l: List[T]) -> List[T]:
 def flatten(l: List[List[T]]) -> List[T]:
     return list(chain.from_iterable(l))
 
-def extract_cfg(cfg_path: str):
-    """This current follows an EXTREMELY rigid format. As a rule of thumb, if this script writes a cfg and then reads it, it will get an identical configuration. All other behaviors are undefined."""
-    out = defaultdict(list) # So we can append
+def base():
+    return {
+        "spec": "Spec",
+        "invariants": [],
+        "properties": [],
+        "constants": {},
+        "model_values": [],
+    }
+
+def extract_cfg(cfg_path: str) -> dict:
+    """Parses as TLA+ config file into form we can combine with flags.
+    
+    This follows an EXTREMELY rigid format. 
+    If this script writes a cfg and then reads it, it will get an identical configuration. 
+    All other behaviors are undefined."""
+    out = base()
     with open(cfg_path) as f:
         cfg = f.readlines()
     for line in cfg:
         line = line.strip()
-        # Okay, okay, maybe the walrus operator is a good idea.
 
         # SPECIFICATION
         match = re.match(r"SPECIFICATION (\w+)", line)
@@ -48,41 +61,54 @@ def extract_cfg(cfg_path: str):
             if match[1] == match[2]:
                 out["model_values"].append(match[1])
             else:
-                out["constants"].append((match[1], match[2]))
+                out["constants"][match[1]] = match[2]
 
     return out
 
-def construct_cfg(args=None):
+def flags_to_dict_form(args=None) -> dict:
+    """Converts cfg_args from object-record form to dictionary form
+    To be compatible with the format we read cfg files into"""
+    return {
+        "spec": args.spec,
+        "invariants": args.invariant,
+        "properties": args.property,
+        "constants": args.constant,
+        "model_values": args.model_values,
+    }
+
+def construct_cfg(flag_cfg=None, *, template_cfg=None, without={}):
     """This returns the cfg that should be constructed, based on the input template.
-    Decisions args"""
-    if args.cfg:
-        cfg_dict = extract_cfg(args.cfg)
+    without is what to _remove_
+    All conflicts resolved in favor of flags."""
+    if template_cfg:
+        cfg_dict = deepcopy(template_cfg)
     else:
+        # TODO I can clean this all WAY up with an "empty config generator"
         cfg_dict = {
-            "spec": args.spec,
+            "spec": flag_cfg["spec"],
             "invariants": [],
             "properties": [],
-            "constants": [], # dict()
+            "constants": {},
             "model_values": [],
             }
 
     # This doesn't preserve ordering. MVP
-    # We use list(set()) to uniquify the list
     # We actually need to make a set operation for no-inv flags
 
-    cfg_dict["invariants"] += args.invariant
+    cfg_dict["invariants"] += flag_cfg["invariants"]
     cfg_dict["invariants"] = unique(cfg_dict["invariants"])
 
-    cfg_dict["properties"] += args.property
+    cfg_dict["properties"] += flag_cfg["properties"]
     cfg_dict["properties"] = unique(cfg_dict["properties"])
 
-    cfg_dict["constants"] += args.constant #dict.update
-    cfg_dict["constants"] = unique(cfg_dict["constants"])
+    cfg_dict["constants"].update(flag_cfg["constants"])
 
-    # TODO overwrite exising model values from cfg
-    # Maybe model_values should be stored as a dict
-    cfg_dict["model_values"] += args.model_values
+    # Maybe model_values should be stored as a dict too
+    cfg_dict["model_values"] += flag_cfg["model_values"]
     # TODO filter out no-invariants and no-properties
+    return cfg_dict
+
+def format_cfg(cfg_dict):
 
     out = [f"SPECIFICATION {cfg_dict['spec']}"]
     for inv in cfg_dict["invariants"]:
@@ -92,7 +118,7 @@ def construct_cfg(args=None):
         out.append(f"PROPERTY {prop}")
 
     if cfg_dict["model_values"]:
-        out.append('\nCONSTANTS \* model values')
+        out.append("\nCONSTANTS \\* model values")
         for model in cfg_dict["model_values"]:
             out.append(f"  {model} = {model}")
 
@@ -100,8 +126,8 @@ def construct_cfg(args=None):
     # TODO should this use <- instead of = ?
     # Would break the regex for reading in cfgs
     if cfg_dict["constants"]:
-        out.append('CONSTANTS \* regular assignments')
-        for constant, value in cfg_dict["constants"]:
+        out.append(r"CONSTANTS \* regular assignments")
+        for constant, value in cfg_dict["constants"].items():
             out.append(f"  {constant} = {value}")
     return "\n".join(out)
 
@@ -137,7 +163,6 @@ tlc_args.add_argument("--tlc-tool", action="store_true", help="If true, outputs 
 # TODO automatic TLC passthrough option. Would disable all the other tlc arguments except config
 
 if __name__ == "__main__":
-
     args = parser.parse_args()
 
     # We need this because we're action=append properties,
@@ -148,17 +173,23 @@ if __name__ == "__main__":
     args.invariant = flatten(args.invariant)
 
 
-    # We need constants to be a list of tuples for flattening purposes
-    # TODO make it a dict
-    args.constant = [(x, y) for x, y in args.constant]
-    #args.constant = [{x: y} for x, y in args.constant]
+    # We need constants to be a list of tuples to couple name with value
+    
+    args.constant = {x: y for x, y in args.constant}
+   
+    flag_cfg = flags_to_dict_form(args)
+    if args.cfg:
+        cfg_dict = extract_cfg(args.cfg)
+        cfg = construct_cfg(flag_cfg=flag_cfg, template_cfg=cfg_dict)
+    else:
+        cfg = construct_cfg(flag_cfg=flag_cfg)
 
-
-    cfg = construct_cfg(args=args)
-    # We don't use the temporary module because it closes the file when we're done, and we need to pass a filepath into tlc.
+    cfg = format_cfg(cfg)
     cfg_file = args.cfg_out
 
     print(cfg)
+ 
+    # We don't use the temporary module because it closes the file when we're done, and we need to pass a filepath into tlc.
     with open(cfg_file, 'w') as f:
         f.write(cfg)
 

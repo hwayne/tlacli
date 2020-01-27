@@ -10,9 +10,11 @@
 
 ## Setup
 
-You need Java and Python 3.7. There's no package, just clone and run.
+You need Java and Python 3.7. There's no package, just clone and run. The `requirements.txt` is only needed for testing. The python script is in `tlacli/tlacli`.
 
 ## Using
+
+All examples assume you are in the `tlacli/tlacli` folder.
 
 ```
 python tlacli.py specfile.tla
@@ -88,9 +90,13 @@ A template can be used in conjunction with the other flags. Currently this adds 
 
 Eh make a PR or something
 
+### Testing
+
+TODO
+
 ## TODO
 
-* Allow overwriting constants when both in template and flags
+### Features
 * Translating PlusCal (probably means implementing subparsers)
 * Get the "no-inv" flags working
 * Implement and document all the TLC options here: https://lamport.azurewebsites.net/tla/tlc-options.html
@@ -104,6 +110,13 @@ Eh make a PR or something
     * SYMMETRY
 * Explanations on what you can and can't assign in a config file (anything that doesn't require `EXTENDS`, I think)
 * Writing on landmines and stuff
+* Add tests
+* Make it easier to add to your $PATH
+
+### Internal
+
+* Move config manipulation functions to its own module
+* Make a CFG class to simplify everything
 
 ## Out of Scope
 
