@@ -98,7 +98,6 @@ TODO
 
 ### Features
 * Translating PlusCal (probably means implementing subparsers)
-* Get the "no-inv" flags working
 * Implement and document all the TLC options here: https://lamport.azurewebsites.net/tla/tlc-options.html
 * Symmetry model sets
 * More post-run cleanup

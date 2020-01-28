@@ -9,3 +9,5 @@ There's no need to remove constants or model values: extra model values do not a
 Right now we're just dumping the output. I'd like to be able to preprocess error traces, so instead of false assertions raising an exception they just print that the assert failed. That would confuse beginners a lot less.
 
 If we parse we should adapt @algyn's fantastic work on the [vscode extension](https://github.com/alygin/vscode-tlaplus). See for example https://github.com/alygin/vscode-tlaplus/blob/master/src/parsers/tlcCodes.ts
+
+java -cp .\tla2tools.jar pcal.trans  
