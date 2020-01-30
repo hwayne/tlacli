@@ -8,15 +8,13 @@ from itertools import chain
 from copy import deepcopy
 from multiprocessing import cpu_count  # For default number of worker threads
 from pathlib import Path
-from typing import List, TypeVar
+from typing import List, TypeVar, Set
+from cfg import CFG, format_cfg
 
 T = TypeVar('T')
 
-def unique(l: List[T]) -> List[T]:
-    return list(set(l))
-
-def flatten(l: List[List[T]]) -> List[T]:
-    return list(chain.from_iterable(l))
+def flatten(l: List[List[T]]) -> Set[T]:
+    return set(chain.from_iterable(l))
 
 def base():
     return {
@@ -27,13 +25,13 @@ def base():
         "model_values": [],
     }
 
-def extract_cfg(cfg_path: str) -> dict:
+def extract_cfg(cfg_path: str) -> CFG:
     """Parses as TLA+ config file into form we can combine with flags.
     
     This follows an EXTREMELY rigid format. 
     If this script writes a cfg and then reads it, it will get an identical configuration. 
     All other behaviors are undefined."""
-    out = base()
+    out = CFG()
     with open(cfg_path) as f:
         cfg = f.readlines()
     for line in cfg:
@@ -42,26 +40,26 @@ def extract_cfg(cfg_path: str) -> dict:
         # SPECIFICATION
         match = re.match(r"SPECIFICATION (\w+)", line)
         if match:
-            out["spec"] = match[1]
+            out.spec = match[1]
 
         # INVARIANT
         match = re.match(r"INVARIANT (\w+)", line)
         if match:
-            out["invariants"].append(match[1])
+            out.invariants.add(match[1])
 
         # TEMPORAL PROPERTIES
         match = re.match(r"PROPERTY (\w+)", line)
         if match:
-            out["properties"].append(match[1])
+            out.properties.add(match[1])
 
         # CONSTANTS
         # This regex is imperfect for ordinary assignments
         match = re.match(r"(\S+)\s?=\s?(.+)", line)
         if match:
             if match[1] == match[2]:
-                out["model_values"].append(match[1])
+                out.model_values.add(match[1])
             else:
-                out["constants"][match[1]] = match[2]
+                out.constants[match[1]] = match[2]
 
     return out
 
@@ -76,59 +74,7 @@ def flags_to_dict_form(args=None) -> dict:
         "model_values": args.model_values,
     }
 
-def construct_cfg(flag_cfg=None, *, template_cfg=None):
-    """This returns the cfg that should be constructed, based on the input template.
-    All conflicts resolved in favor of flags."""
-    if template_cfg:
-        cfg_dict = deepcopy(template_cfg)
-    else:
-        # TODO I can clean this all WAY up with an "empty config generator"
-        cfg_dict = {
-            "spec": flag_cfg["spec"],
-            "invariants": [],
-            "properties": [],
-            "constants": {},
-            "model_values": [],
-            }
 
-    # This doesn't preserve ordering. MVP
-    # We actually need to make a set operation for no-inv flags
-
-    cfg_dict["invariants"] += flag_cfg["invariants"]
-    cfg_dict["invariants"] = unique(cfg_dict["invariants"])
-
-    cfg_dict["properties"] += flag_cfg["properties"]
-    cfg_dict["properties"] = unique(cfg_dict["properties"])
-
-    cfg_dict["constants"].update(flag_cfg["constants"])
-
-    # Maybe model_values should be stored as a dict too
-    cfg_dict["model_values"] += flag_cfg["model_values"]
-    # TODO filter out no-invariants and no-properties
-    return cfg_dict
-
-def format_cfg(cfg_dict):
-
-    out = [f"SPECIFICATION {cfg_dict['spec']}"]
-    for inv in cfg_dict["invariants"]:
-        out.append(f"INVARIANT {inv}")
-
-    for prop in cfg_dict["properties"]:
-        out.append(f"PROPERTY {prop}")
-
-    if cfg_dict["model_values"]:
-        out.append("\nCONSTANTS \\* model values")
-        for model in cfg_dict["model_values"]:
-            out.append(f"  {model} = {model}")
-
-
-    # TODO should this use <- instead of = ?
-    # Would break the regex for reading in cfgs
-    if cfg_dict["constants"]:
-        out.append(r"CONSTANTS \* regular assignments")
-        for constant, value in cfg_dict["constants"].items():
-            out.append(f"  {constant} = {value}")
-    return "\n".join(out)
 
 parser = argparse.ArgumentParser()
 cfg_args = parser.add_argument_group("cfg_args", "Configuration values for the TLA+ spec")
@@ -144,6 +90,7 @@ cfg_args.add_argument("--property", default=[], action="append", nargs='*', help
 
 
 # This needs to be append so we get them in pairs matching constants to their assignments
+# We need constants to be a list of tuples to couple name with value
 cfg_args.add_argument("--constant", default=[], nargs=2, action="append", help='{name} {value}')
 cfg_args.add_argument("--model-values", default=[], nargs='+', help='list of model values')
 
@@ -170,25 +117,23 @@ if __name__ == "__main__":
     args.invariant = flatten(args.invariant)
 
 
-    # We need constants to be a list of tuples to couple name with value
     
     args.constant = {x: y for x, y in args.constant}
+    flag_cfg = CFG( spec=args.spec, properties=args.property, invariants=args.invariant, constants = args.constant, model_values=args.model_values)
+    cfg = CFG() # base
    
-    flag_cfg = flags_to_dict_form(args)
+    # We merge template before flags so flag constants override
     if args.cfg:
-        cfg_dict = extract_cfg(args.cfg)
-        cfg = construct_cfg(flag_cfg=flag_cfg, template_cfg=cfg_dict)
-    else:
-        cfg = construct_cfg(flag_cfg=flag_cfg)
+        cfg = cfg.merge(extract_cfg(args.cfg))
 
-    cfg = format_cfg(cfg)
+    cfg = cfg.merge(flag_cfg)
+    out = format_cfg(cfg)
     cfg_file = args.cfg_out
 
-    print(cfg)
  
     # We don't use the temporary module because it closes the file when we're done, and we need to pass a filepath into tlc.
     with open(cfg_file, 'w') as f:
-        f.write(cfg)
+        f.write(out)
 
     # TLAtools requires the filename to be bare, without path, in the current working directory. If these things are true,
     spec_path = Path(args.Specfile)

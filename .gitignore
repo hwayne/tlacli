@@ -6,3 +6,5 @@ junk/
 __pycache__
 .pytest_cache
 .hypothesis
+.mypy_cache
+.vim

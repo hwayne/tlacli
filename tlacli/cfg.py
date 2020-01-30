@@ -20,19 +20,21 @@ class CFG:
 
     def __init__(self,
         spec="Spec",
-        invariants: ss=set(),
-        properties: ss=set(),
+        invariants: ss=None,
+        properties: ss=None,
         constants=None,
-        model_values: ss=set()    
+        model_values: ss=None    
     ):
+        # All the above Nones are because we use sets and dicts for everything
         self.spec = spec
-        self.invariants = invariants
-        self.properties = properties
+        self.invariants = invariants if invariants else set()
+        self.properties = properties if properties else set()
+        self.model_values = model_values if model_values else set()
+
         if constants:
             self.constants = constants
         else:
             self.constants = {}
-        self.model_values = model_values
 
     def to_dict(self):
         return {
@@ -58,12 +60,14 @@ class CFG:
         out.constants.update(other.constants)
         return out
 
-    def __eq__(self, other: 'CFG') -> bool:
+    def __eq__(self, other):
         """Two CFGs are equal if all of their properties are equal."""
         return self.to_dict() == other.to_dict()
     
 
 def format_cfg(cfg: CFG) -> str:
+    # TODO the new CFG uses sets, not lists
+    # Have to switch them over to make them usable
     cfg_dict = cfg.to_dict()
     out = [f"SPECIFICATION {cfg_dict['spec']}"]
     for inv in cfg_dict["invariants"]:
@@ -85,3 +89,5 @@ def format_cfg(cfg: CFG) -> str:
         for constant, value in cfg_dict["constants"].items():
             out.append(f"  {constant} = {value}")
     return "\n".join(out)
+
+
