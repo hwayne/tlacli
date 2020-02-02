@@ -135,19 +135,11 @@ if __name__ == "__main__":
     with open(cfg_file, 'w') as f:
         f.write(out)
 
-    # TLAtools requires the filename to be bare, without path, in the current working directory. If these things are true,
-    spec_path = Path(args.Specfile)
-    try:
-        if not spec_path.samefile(Path.cwd() / spec_path.name):
-            print("Specfile must exist in the current directory.")
-            sys.exit(1)
-    except:
-        print("Specfile must exist in the current directory.")
-        sys.exit(1)
 
     # Actually run stuff
+    spec_path = Path(args.Specfile)
     jar_path = Path(sys.path[0], "tla2tools.jar")
-    script = f"java -jar {jar_path} -workers {args.tlc_workers} -config {cfg_file} -terse -cleanup {spec_path.name}"
+    script = f"java -jar {jar_path} -workers {args.tlc_workers} -config {cfg_file} -terse -cleanup {spec_path}"
     print(script)
     result = subprocess.call(script, shell=True)
 
