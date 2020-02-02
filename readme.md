@@ -80,8 +80,6 @@ python tlacli.py --cfg foo.cfg specfile.tla
 
 A template can be used in conjunction with the other flags. Currently this adds the additional flags on top of the template. The plan is that if the flags and the template conflict, the flags take priority. This will let us specialize a template.
 
-**BUG:** Constants are currently additive. That doesn't make sense
-
 ## Contributing
 
 Eh make a PR or something
@@ -97,7 +95,7 @@ TODO
 * Implement and document all the TLC options here: https://lamport.azurewebsites.net/tla/tlc-options.html
 * Symmetry model sets
 * More post-run cleanup
-* Maybe use fewer workers per run
+* Maybe use fewer workers per run by default
 * Advanced config options:
     * VIEW (chaos reigns)
     * Operator Overrides / Constant Operators
@@ -105,13 +103,11 @@ TODO
     * SYMMETRY
 * Explanations on what you can and can't assign in a config file (anything that doesn't require `EXTENDS`, I think)
 * Writing on landmines and stuff
-* Add tests
-* Make it easier to add to your $PATH
+* Make it easier to add to your $PATH (A package?)
 
 ### Internal
 
-* Move config manipulation functions to its own module
-* Make a CFG class to simplify everything
+* Nothing rn
 
 ## Out of Scope
 
