@@ -20,10 +20,6 @@ All examples assume you are in the `tlacli/tlacli` folder.
 python tlacli.py specfile.tla
 ```
 
-**NOTE:** The specfile.tla must be in the working directory.
-
-(IIRC this is a known issue with TLC but I haven't investigated yet. This means you can only run tlacli.py while in the same directory as `specfile`. You don't need to be in the same directory as `tlacli.py`.)
-
 By default, this runs `specfile.tla` with the specification `Spec`. You can change the run specification with the `--spec` flag. By default, this runs TLC with the `-terse` and `-cleanup` flags. The config file will be saved as `temporary.cfg`. You can change the filename with `--cfg-out {name}`.
 
 **NOTE:** Running currently creates an empty `states` directory.
