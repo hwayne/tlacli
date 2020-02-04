@@ -8,3 +8,4 @@ __pycache__
 .hypothesis
 .mypy_cache
 .vim
+*.egg-info

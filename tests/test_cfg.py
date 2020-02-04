@@ -1,6 +1,6 @@
 
-from ..tlacli.tlacli import construct_cfg, extract_cfg 
-from ..tlacli.cfg import CFG, format_cfg
+from tlacli.cfg import CFG, format_cfg
+from tlacli.tools.tlc import extract_cfg 
 from hypothesis import given, assume
 from pytest import mark
 import hypothesis.strategies as s

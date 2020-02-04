@@ -1,6 +1,6 @@
 import argparse
 
-import tools.tlc as tlc
+from tlacli.tools import tlc
 
 
 
@@ -9,6 +9,10 @@ parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(help="Which TLA+ tool to run")
 
 tlc.setup(subparsers)
+
+def main():
+    args = parser.parse_args()
+    args.run(args)
 
 if __name__ == "__main__":
     

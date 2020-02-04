@@ -2,7 +2,7 @@ from argparse import _SubParsersAction, Namespace
 from multiprocessing import cpu_count  # For default number of worker threads
 from itertools import chain
 from typing import List, TypeVar, Set
-from cfg import CFG, format_cfg
+from tlacli.cfg import CFG, format_cfg
 import re
 import os
 import subprocess
