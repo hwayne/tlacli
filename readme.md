@@ -121,6 +121,7 @@ Use `pytest`. This is currently broken because I need to add fixtures
 
 * Store config if you have a _lot_ of flags you need to pass. Would be overridden by actual flags
 * `--show-cfg` and `--show-script` for debugging purposes
+* Get rid of the horrible `pkg_resources` kludge for accessing the `jar`
 
 ## Out of Scope
 

@@ -6,6 +6,7 @@ from argparse import Namespace, _SubParsersAction
 from itertools import chain
 from multiprocessing import cpu_count  # For default number of worker threads
 from pathlib import Path
+from pkg_resources import resource_filename
 from typing import List, Set, TypeVar
 
 from tlacli.cfg import CFG, format_cfg
@@ -53,58 +54,6 @@ def extract_cfg(cfg_path: str) -> CFG:
 
     return out
 
-def run(args: Namespace):
-    # We need this because we're action=append properties,
-    # So get [[a, b], [c]] instead of [a, b, c].
-    # action=extend is 3.8 only
-
-    args.property = flatten(args.property)
-    args.invariant = flatten(args.invariant)
-    args.model_values = set(args.model_values)
-
-
-    
-    args.constant = {x: y for x, y in args.constant}
-    flag_cfg = CFG( spec=args.spec, properties=args.property, invariants=args.invariant, constants = args.constant, model_values=args.model_values)
-    cfg = CFG() # base
-   
-    # We merge template before flags so flag constants override
-    if args.cfg:
-        cfg = cfg.merge(extract_cfg(args.cfg))
-
-    cfg = cfg.merge(flag_cfg)
-    out = format_cfg(cfg)
-    cfg_file = args.cfg_out
-
- 
-    # We don't use the temporary module because it closes the file when we're done, and we need to pass a filepath into tlc.
-    # BUG: fails if passing in an absolute path (raised)
-    with open(cfg_file, 'w') as f:
-
-        f.write(out)
-
-    # Actually run stuff
-    spec_path = Path(args.Specfile)
-    jar_path = Path(sys.path[0], "tla2tools.jar")
-
-    # At some point I want to start parsing the output. That means adding the -tool flag to the script.
-    script = f"java -jar {jar_path} -workers {args.tlc_workers} -config {cfg_file} -terse -cleanup {spec_path}"
-
-    #print(script)
-
-    # text=True means STDOUT not treated as bytestream
-    # shell=True means shell expansions (like ~) are handled
-    # text and capture_output make it python 3.7 only
-    # NOTE: stderr a thing
-    result = subprocess.run(script, text=True, capture_output=True, shell=True)
-
-    print(result.stdout)
-
-    sys.exit(result.returncode)
-    # Does this create an empty folder even when we cleanup the states?
-    # TODO remove temporary if flag enabled
-    ...
-
 
 def setup(parser: _SubParsersAction) -> None:
     parser_tlc = parser.add_parser("check", help="Run the TLC model checker on a TLA+ spec.", aliases=["tlc"])
@@ -140,3 +89,55 @@ def setup(parser: _SubParsersAction) -> None:
     # TODO automatic TLC passthrough option. Would be a raw string dump
 
     parser_tlc.set_defaults(run=run)
+
+def run(args: Namespace):
+    # We need this because we're action=append properties,
+    # So get [[a, b], [c]] instead of [a, b, c].
+    # action=extend is 3.8 only
+
+    args.property = flatten(args.property)
+    args.invariant = flatten(args.invariant)
+    args.model_values = set(args.model_values)
+
+
+    
+    args.constant = {x: y for x, y in args.constant}
+    flag_cfg = CFG( spec=args.spec, properties=args.property, invariants=args.invariant, constants = args.constant, model_values=args.model_values)
+    cfg = CFG() # base
+   
+    # We merge template before flags so flag constants override
+    if args.cfg:
+        cfg = cfg.merge(extract_cfg(args.cfg))
+
+    cfg = cfg.merge(flag_cfg)
+    out = format_cfg(cfg)
+    cfg_file = args.cfg_out
+
+ 
+    # We don't use the temporary module because it closes the file when we're done, and we need to pass a filepath into tlc.
+    # BUG: fails if passing in an absolute path (raised)
+    with open(cfg_file, 'w') as f:
+
+        f.write(out)
+
+    # Actually run stuff
+    spec_path = Path(args.Specfile)
+    jar_path = resource_filename('tlacli', 'tla2tools.jar')
+
+    # At some point I want to start parsing the output. That means adding the -tool flag to the script.
+    script = f"java -jar {jar_path} -workers {args.tlc_workers} -config {cfg_file} -terse -cleanup {spec_path}"
+
+    #print(script)
+
+    # text=True means STDOUT not treated as bytestream
+    # shell=True means shell expansions (like ~) are handled
+    # text and capture_output make it python 3.7 only
+    result = subprocess.run(script, text=True, capture_output=True, shell=True)
+
+    print(result.stderr)
+    print(result.stdout)
+
+    sys.exit(result.returncode)
+
+    # Does this create an empty folder even when we cleanup the states?
+    # TODO remove temporary if flag enabled
