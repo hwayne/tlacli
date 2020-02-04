@@ -4,25 +4,28 @@
 
 `tlacli` is a tool for running the TLC model checker from the command line. You can already run TLC from the command line, anyway, using `tlc2.TLC`, and `tlacli` only provides a subset of the functionality. It still has a few UX improvements, though:
 
-1. Nicer flag UX. Arguments follow the conventional "flag" format. You can spot-check a spec with just `python tlacli.py tlc specfile.tla`. 
+1. Nicer flag UX. Arguments follow the conventional "flag" format. You can spot-check a spec with just `tlacli check specfile.tla`. 
 1. Saner defaults. It automatically uses `Spec` as your temporal formula, defaults to using a worker per CPU core, gives terse output, etc.
 1. You don't have to write a config file. You can define invariants, properties, and constants as command-line flags and `tlacli` will automatically build the proper config file for that run. You can also save the configuration as a template for future runs. You can also use _both_ a config file and flags, where the config is a template and the flags are specializations.
 
 ## Setup
 
-You need Java and Python 3.7. There's no package, just clone and run. The `requirements.txt` is only needed for testing. The python script is in `tlacli/tlacli`.
+You need Java and Python 3.7. There's no package yet; in the meantime, clone it and run `pip install -e .` This will be updated as I learn more about making python packages.
+
+The `requirements.txt` is only needed for testing.
 
 ## Using
 
-All examples assume you are in the `tlacli/tlacli` folder.
 
 ```
-python tlacli.py tlc specfile.tla
+tlacli check specfile.tla
 ```
 
 By default, this runs `specfile.tla` with the specification `Spec`. You can change the run specification with the `--spec` flag. By default, this runs TLC with the `-terse` and `-cleanup` flags. The config file will be saved as `temporary.cfg`. You can change the filename with `--cfg-out {name}`.
 
 **NOTE:** Running currently creates an empty `states` directory.
+
+**BUG:** Currently you cannot pass in an absolute path for the specfile, at least on windows. You can pass in a relative path. See [this](https://github.com/tlaplus/tlaplus/issues/424) tlatools issue.
 
 ### Properties
 
@@ -31,7 +34,7 @@ You can specify invariants and properties from the command line. Use the `--inva
 **NOTE:** If `--invariant` or `--property` are the _last_ flags passed in, the script will assume your specfile is an invariant! You can prevent this by adding a `--`.
 
 ```
-python tlacli.py tlc --invariant Inv1 Inv2 -- specfile.tla
+tlacli check --invariant Inv1 Inv2 -- specfile.tla
 ```
 
 You can also use `--inv` and `--prop`, but this may change in the future.
@@ -41,8 +44,8 @@ You can also use `--inv` and `--prop`, but this may change in the future.
 You can assign constants with `--constant {name} {value}`. Each constant must be a separate flag. You can put in sets, tuples, etc by putting `{value}` in quotes. Use single quotes if you want to put in strings.
 
 ```
-python tlacli.py tlc --constant Max 4 --constant Threads '{1, 2}' specfile.tla
-python tlacli.py tlc --constant Colors '{\"red\", \"green\"}' specfile.tla
+tlacli check --constant Max 4 --constant Threads '{1, 2}' specfile.tla
+tlacli check --constant Colors '{\"red\", \"green\"}' specfile.tla
 ```
 
 #### Model Values
@@ -50,7 +53,7 @@ python tlacli.py tlc --constant Colors '{\"red\", \"green\"}' specfile.tla
 If you need several model values, you can specify them all in a single `--model-values {m1} {m2} ...` flag.
 
 ```
-python tlacli.py tlc --model_values A B C Null Server -- specfile.tla
+tlacli check --model_values A B C Null Server -- specfile.tla
 ```
 
 #### Sets of Model Values
@@ -59,11 +62,11 @@ Use an ordinary assignment. You don't need a `--model-values` flag first.
 
 ```
 # Wrong
-python tlacli.py tlc --model-values m1 m2 m3 --constant ModelSet "{m1, m2, m3}" specfile.tla
+tlacli check --model-values m1 m2 m3 --constant ModelSet "{m1, m2, m3}" specfile.tla
 
 
 # Right
-python tlacli.py tlc --constant ModelSet "{m1, m2, m3}" specfile.tla
+tlacli check --constant ModelSet "{m1, m2, m3}" specfile.tla
 ```
 
 Symmetry sets are not yet supported.
@@ -73,7 +76,7 @@ Symmetry sets are not yet supported.
 You can specify a template configuration with `--cfg template.cfg`:
 
 ```
-python tlacli.py tlc --cfg foo.cfg specfile.tla
+tlacli check --cfg foo.cfg specfile.tla
 ```
 
 `tlacli` can only read things that are also expressible as flags. Currently, this means invariants, properties, specification, and (most) constants. Everything else is ignored. It's a simple text parser and may miss things formated in an unexpected way. The one guarantee: If you write a file a config with `--cfg-out` and later read it with `--cfg`, the whole config will be read properly.
@@ -91,7 +94,7 @@ TODO
 ## TODO
 
 ### Features
-* Translating PlusCal (probably means implementing subparsers)
+* Translating PlusCal (halfway done)
 * Implement and document all the TLC options here: https://lamport.azurewebsites.net/tla/tlc-options.html
     * TLC option passthrough
 * Symmetry model sets
@@ -104,12 +107,10 @@ TODO
     * SYMMETRY
 * Explanations on what you can and can't assign in a config file (anything that doesn't require `EXTENDS`, I think)
 * Writing on landmines and stuff
-* Make it easier to add to your $PATH (A package?)
+* Actually get the package on PyPI
 
 ### Internal
 
-* Nothing rn
-* Make it easier to add to your $PATH
 * Store config if you have a _lot_ of flags you need to pass. Would be overridden by actual flags
 
 ## Out of Scope
