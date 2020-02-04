@@ -112,6 +112,7 @@ TODO
 ### Internal
 
 * Store config if you have a _lot_ of flags you need to pass. Would be overridden by actual flags
+* `--show-cfg` and `--show-script` for debugging purposes
 
 ## Out of Scope
 

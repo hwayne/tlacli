@@ -73,7 +73,6 @@ def run(args: Namespace):
 
     cfg = cfg.merge(flag_cfg)
     out = format_cfg(cfg)
-    print(out)
     cfg_file = args.cfg_out
 
  
@@ -90,10 +89,12 @@ def run(args: Namespace):
     # At some point I want to start parsing the output. That means adding the -tool flag to the script.
     script = f"java -jar {jar_path} -workers {args.tlc_workers} -config {cfg_file} -terse -cleanup {spec_path}"
 
-    print(script)
+    #print(script)
+
     # text=True means STDOUT not treated as bytestream
     # shell=True means shell expansions (like ~) are handled
     # text and capture_output make it python 3.7 only
+    # NOTE: stderr a thing
     result = subprocess.run(script, text=True, capture_output=True, shell=True)
 
     print(result.stdout)
