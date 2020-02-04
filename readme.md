@@ -14,7 +14,15 @@ You need Java and Python 3.7. There's no package yet; in the meantime, clone it 
 
 The `requirements.txt` is only needed for testing.
 
-## Using
+## Translating PlusCal
+
+```
+tlacli translate specfile.tla
+```
+
+**NOTE:** By default this includes the `-nocfg` flag, which prevents the tool from overwritting your copy of `specfile.cfg`. Right now no other flags are supported. If you need flags, you can put them directly in the module file. See page 67 of the [PlusCal manual](https://lamport.azurewebsites.net/tla/p-manual.pdf).
+
+## Model Checking
 
 
 ```
@@ -25,7 +33,7 @@ By default, this runs `specfile.tla` with the specification `Spec`. You can chan
 
 **NOTE:** Running currently creates an empty `states` directory.
 
-**BUG:** Currently you cannot pass in an absolute path for the specfile, at least on windows. You can pass in a relative path. See [this](https://github.com/tlaplus/tlaplus/issues/424) tlatools issue.
+**BUG:** Currently you cannot pass in an absolute path for the specfile, at least on windows. You can pass in a relative path. See [this](https://github.com/tlaplus/tlaplus/issues/424) tlatools issue. This is not an issue for pluscal translation.
 
 ### Properties
 
@@ -89,7 +97,7 @@ Eh make a PR or something
 
 ### Testing
 
-TODO
+Use `pytest`. This is currently broken because I need to add fixtures
 
 ## TODO
 

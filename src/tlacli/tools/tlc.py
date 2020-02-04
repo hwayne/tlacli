@@ -1,13 +1,14 @@
-from argparse import _SubParsersAction, Namespace
-from multiprocessing import cpu_count  # For default number of worker threads
-from itertools import chain
-from typing import List, TypeVar, Set
-from tlacli.cfg import CFG, format_cfg
-import re
 import os
+import re
 import subprocess
 import sys
+from argparse import Namespace, _SubParsersAction
+from itertools import chain
+from multiprocessing import cpu_count  # For default number of worker threads
 from pathlib import Path
+from typing import List, Set, TypeVar
+
+from tlacli.cfg import CFG, format_cfg
 
 T = TypeVar('T')
 
