@@ -10,7 +10,7 @@
 
 ## Setup
 
-You need Java and Python 3.7. There's no package yet; in the meantime, clone it and run `pip install -e .` This will be updated as I learn more about making python packages.
+Just run `pip install tlacli`. You will need Java and Python 3.7. 
 
 The `requirements.txt` is only needed for testing.
 
