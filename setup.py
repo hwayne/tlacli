@@ -20,7 +20,7 @@ setup(
         'console_scripts': ["tlacli=tlacli.tlacli:main"]
         },
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3",
         "Topic :: Software Development",

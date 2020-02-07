@@ -9,3 +9,5 @@ __pycache__
 .mypy_cache
 .vim
 *.egg-info
+build/
+dist/
