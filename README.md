@@ -29,9 +29,7 @@ tlacli translate specfile.tla
 tlacli check specfile.tla
 ```
 
-By default, this runs `specfile.tla` with the specification `Spec`. You can change the run specification with the `--spec` flag. By default, this runs TLC with the `-terse` and `-cleanup` flags. The config file will be saved as `temporary.cfg`. You can change the filename with `--cfg-out {name}`.
-
-**NOTE:** Running currently creates an empty `states` directory.
+By default, this runs `specfile.tla` with the specification `Spec`. You can change the run specification with the `--spec` flag. By default, this runs TLC with the `-terse` and `-cleanup` flags. The config file will be saved as `temporary.cfg`. You can change the filename with `--out-cfg {name}`.
 
 **BUG:** Currently you cannot pass in an absolute path for the specfile, at least on windows. You can pass in a relative path. See [this](https://github.com/tlaplus/tlaplus/issues/424) tlatools issue. This is not an issue for pluscal translation.
 
@@ -87,10 +85,13 @@ You can specify a template configuration with `--cfg template.cfg`:
 tlacli check --cfg foo.cfg specfile.tla
 ```
 
-`tlacli` can only read things that are also expressible as flags. Currently, this means invariants, properties, specification, and (most) constants. Everything else is ignored. It's a simple text parser and may miss things formated in an unexpected way. The one guarantee: If you write a file a config with `--cfg-out` and later read it with `--cfg`, the whole config will be read properly.
+`tlacli` can only read things that are also expressible as flags. Currently, this means invariants, properties, specification, and (most) constants. Everything else is ignored. It's a simple text parser and may miss things formated in an unexpected way. The one guarantee: If you write a file a config with `--out-cfg` and later read it with `--cfg`, the whole config will be read properly.
 
 A template can be used in conjunction with the other flags. Currently this adds the additional flags on top of the template. The plan is that if the flags and the template conflict, the flags take priority. This will let us specialize a template.
 
+### Debugging
+
+`--show-script` will print the command-line script passing to `tla2tools`. `--show-cfg` will print the cfg used for model-checking.
 ## Contributing
 
 Eh make a PR or something
@@ -102,11 +103,10 @@ Use `pytest`. This is currently broken because I need to add fixtures
 ## TODO
 
 ### Features
-* Translating PlusCal (halfway done)
 * Implement and document all the TLC options here: https://lamport.azurewebsites.net/tla/tlc-options.html
     * TLC option passthrough
 * Symmetry model sets
-* More post-run cleanup
+* Remove `temporary.cfg`
 * Maybe use fewer workers per run by default
 * Advanced config options:
     * VIEW (chaos reigns)
@@ -115,16 +115,15 @@ Use `pytest`. This is currently broken because I need to add fixtures
     * SYMMETRY
 * Explanations on what you can and can't assign in a config file (anything that doesn't require `EXTENDS`, I think)
 * Writing on landmines and stuff
-* Actually get the package on PyPI
+
 
 ### Internal
 
 * Store config if you have a _lot_ of flags you need to pass. Would be overridden by actual flags
-* `--show-cfg` and `--show-script` for debugging purposes
 * Get rid of the horrible `pkg_resources` kludge for accessing the `jar`
 
 ## Out of Scope
 
 * INIT-NEXT config
-* TLAPS and tla2tex
+* TLAPS
 * Toolbox-only features like profiling, running in the cloud, trace explorer, "evaluate constant expression"

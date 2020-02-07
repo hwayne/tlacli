@@ -7,6 +7,7 @@ from itertools import chain
 from multiprocessing import cpu_count  # For default number of worker threads
 from pathlib import Path
 from pkg_resources import resource_filename
+from tempfile import TemporaryDirectory # For state cleanup
 from typing import List, Set, TypeVar
 
 from tlacli.cfg import CFG, format_cfg
@@ -77,7 +78,10 @@ def setup(parser: _SubParsersAction) -> None:
 
     # TODO I hate --cfg-out, maybe changed to --out-cfg
     parser_tlc.add_argument("Specfile", help="The specfile.tla")
-    parser_tlc.add_argument("--cfg-out", default="temporary.cfg", help="Where to save the cfg file, if you want to reuse it")
+    parser_tlc.add_argument("--out-cfg", default="temporary.cfg", help="Where to save the cfg file, if you want to reuse it")
+    parser_tlc.add_argument("--show-cfg", action="store_true", help="If added, show the generated CFG before running TLC.")
+    parser_tlc.add_argument("--show-script", action="store_true", help="If added, show the generated tla2tools script before running.")
+
     # TODO parser.add_argument("--cfg-del", action="store_true", help="If added, deletes cfg file after model checking is complete")
     # TODO for tlc arguments, use store_true and store_false. Might also want to move the parser config into a separate file because there are a lot
 
@@ -111,9 +115,11 @@ def run(args: Namespace):
 
     cfg = cfg.merge(flag_cfg)
     out = format_cfg(cfg)
-    cfg_file = args.cfg_out
+    cfg_file = args.out_cfg
 
- 
+    if args.show_cfg:
+        print(out)
+
     # We don't use the temporary module because it closes the file when we're done, and we need to pass a filepath into tlc.
     # BUG: fails if passing in an absolute path (raised)
     with open(cfg_file, 'w') as f:
@@ -124,20 +130,27 @@ def run(args: Namespace):
     spec_path = Path(args.Specfile)
     jar_path = resource_filename('tlacli', 'tla2tools.jar')
 
+    
     # At some point I want to start parsing the output. That means adding the -tool flag to the script.
-    script = f"java -jar {jar_path} -workers {args.tlc_workers} -config {cfg_file} -terse -cleanup {spec_path}"
+    with TemporaryDirectory() as state_dir:
+        metadir= f"-metadir {state_dir}" # Removes the extraneous state folder
+        config= f"-config {cfg_file}"
+        workers = f"-workers {args.tlc_workers}"
+        script = f"java -jar {jar_path} {workers} {config} {metadir} -terse -cleanup {spec_path}"
 
-    #print(script)
+        if args.show_script:
+            print(script)
+    
+        # If we don't run the subprocess inside the context manager, TLC will force-generate state_dir and it will
+        # not be cleaned.
+        # Current design does not allow preserving of states as an option, TODO make that possible
 
-    # text=True means STDOUT not treated as bytestream
-    # shell=True means shell expansions (like ~) are handled
-    # text and capture_output make it python 3.7 only
-    result = subprocess.run(script, text=True, capture_output=True, shell=True)
+        # text=True means STDOUT not treated as bytestream
+        # shell=True means shell expansions (like ~) are handled
+        # text and capture_output make it python 3.7 only
+        result = subprocess.run(script, text=True, capture_output=True, shell=True)
 
     print(result.stderr)
     print(result.stdout)
 
-    sys.exit(result.returncode)
 
-    # Does this create an empty folder even when we cleanup the states?
-    # TODO remove temporary if flag enabled
