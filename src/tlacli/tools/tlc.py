@@ -17,12 +17,44 @@ T = TypeVar('T')
 def flatten(l: List[List[T]]) -> Set[T]:
     return set(chain.from_iterable(l))
 
+def parse_into_cfg(cfg: str) -> CFG:
+    out = CFG()
+    for line in cfg.split("\n"):
+        line = line.strip()
+
+        # SPECIFICATION
+        match = re.match(r"SPECIFICATION (\w+)", line)
+        if match:
+            out.spec = match[1]
+
+        # INVARIANT
+        match = re.match(r"INVARIANT (\w+)", line)
+        if match:
+            out.invariants.add(match[1])
+
+        # TEMPORAL PROPERTIES
+        match = re.match(r"PROPERTY (\w+)", line)
+        if match:
+            out.properties.add(match[1])
+
+        # CONSTANTS
+        # This regex is imperfect for ordinary assignments
+        match = re.match(r"(\S+)\s?=\s?(.+)", line)
+        if match:
+            if match[1] == match[2]:
+                out.model_values.add(match[1])
+            else:
+                out.constants[match[1]] = match[2]
+
+    return out
+
 def extract_cfg(cfg_path: str) -> CFG:
     """Parses as TLA+ config file into form we can combine with flags.
     
     This follows an EXTREMELY rigid format. 
     If this script writes a cfg and then reads it, it will get an identical configuration. 
     All other behaviors are undefined."""
+    # I should split out reading in the CFG and parsing it, like duh
     out = CFG()
     with open(cfg_path) as f:
         cfg = f.readlines()
@@ -123,7 +155,6 @@ def run(args: Namespace):
     # We don't use the temporary module because it closes the file when we're done, and we need to pass a filepath into tlc.
     # BUG: fails if passing in an absolute path (raised)
     with open(cfg_file, 'w') as f:
-
         f.write(out)
 
     # Actually run stuff

@@ -4,6 +4,8 @@ Both the template and the flags are additive, so there's no way to remove an inv
 
 There's no need to remove constants or model values: extra model values do not affect the spec, and all constants must be defined anyway.
 
+(20-2-9 One case where you'd want `--no-properties` is if you have state constraints or are using simulation mode. In that case you shouldn't be able to use a template if it has a liveness check. But maybe you should be making a template without one and adding the prop, instead of making a template with one and removing it.) 
+
 ## Parsing Output
 
 Right now we're just dumping the output. I'd like to be able to preprocess error traces, so instead of false assertions raising an exception they just print that the assert failed. That would confuse beginners a lot less.
@@ -28,11 +30,9 @@ Probably want to use `pyparse`, which will be convenient but mean we have to pac
 
 For now we're _only_ parsing output, which means we don't have to worry about "sometimes-significant whitespace" in action conjunctions.
 
-## PlusCal
 
-`java -cp .\tla2tools.jar pcal.trans  `
+## Shared subcommand parsers
 
-See command line flags [here](https://lamport.azurewebsites.net/tla/p-manual.pdf). `-nocfg` should be a default. The rest of the flags can be safely ignored for now; most of them aren't critical to implement. Might need a "passthrough" option, same as TLC.
+There are several TLC flags that only make sense if you pass in `-simulate`. Also, you can't check liveness properties in simulations. So it makes sense to turn simulations into a separate subcommand of tlacli, so we'd write `tlacli simulate --seed=1 file.tla`. But simulation mode still uses a lot of similar options and would benefit from the cfg flags. This means making `cfg_args` a shared module with its own setup that adds the cfg argument group.
 
-The main challenge here will be using argparse subparsers. I'd want it to default to TLC, and only use pluscal if you pass in `python tlacli.py pluscal file`.
-
+Also we should rename `tools` to `subcommands`. There won't be a 1-1 mapping between subcommands and tools anymore. Also also we should rename the files `check` and `translate`, not `tlc` and `pluscal`, and put it in the readme what they correspond to.

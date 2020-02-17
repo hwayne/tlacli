@@ -1,6 +1,6 @@
 
 from tlacli.cfg import CFG, format_cfg
-from tlacli.tools.tlc import extract_cfg 
+from tlacli.tools.tlc import extract_cfg, parse_into_cfg 
 from hypothesis import given, assume
 from pytest import mark
 import hypothesis.strategies as s
@@ -11,29 +11,33 @@ def list_sample(sample):
 def set_sample(sample):
     return s.sets(s.sampled_from(sample))
 
-def CfgStrategy():
+def CfgStrategy(
+    constants=None
+):
+    if constants is None:
+        constants = s.dictionaries(s.sampled_from(("a", "b", "c")), s.booleans()) # dict()
     return s.builds(
         CFG,
         spec=s.just("Spec"),
         invariants=set_sample(("I1", "I2")),
         properties=set_sample(("P1", "P2")),
-        constants=s.dictionaries(s.sampled_from(("a", "b", "c")), s.booleans()), # dict()
-#        model_values=s.just(set()),
+        constants=constants,
+        model_values=s.just(set()),
+        # symmetry_sets=s.just(list()),
     )
 
+no_constants = {"constants": s.just(dict())}
 
-
-def test_extract_cfg():
-    cfg = extract_cfg("fixtures/1.cfg")
+def test_extract_cfg(cfg_fixture):
+    cfg = parse_into_cfg(cfg_fixture)
     assert cfg.invariants == {'TypeInvariant', 'StateInvariant'}
     assert cfg.constants == {'x': '1', 'y': '2'}
 
-@mark.skip("Flakey: sets are unordered")
-def test_round_trip():
-    with open("fixtures/1.cfg") as f:
-        compare = f.read()
-    cfg = extract_cfg("fixtures/1.cfg")
-    assert format_cfg(cfg) == compare
+#@mark.skip("Flakey: sets are unordered")
+def test_round_trip(cfg_fixture):
+
+    cfg = parse_into_cfg(cfg_fixture)
+    assert format_cfg(cfg) == cfg_fixture
 #    out = construct_cfg(flags_cfg=cfg)
 
 
@@ -41,7 +45,7 @@ def test_round_trip():
 # Roundtrip cfg <- With this we can stop looking at the raw values of fixtures, we just need to extract them
 # # Could be a property test
 
-@given(CfgStrategy(), CfgStrategy())
+@given(CfgStrategy(**no_constants), CfgStrategy(**no_constants))
 def test_merge_additive_invariants(f, g):
     out = f.merge(g)
     assert out.invariants == f.invariants | g.invariants

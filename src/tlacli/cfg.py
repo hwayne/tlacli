@@ -9,46 +9,26 @@ See Specifying Systems, pg ??? for more info on format
 """
 
 import typing as t
-
+from dataclasses import dataclass, field, asdict
 #    We store everything as sets if possible to make merging easier.
 ss = t.Set[str] # String set
 
+@dataclass
 class CFG:
     """
     Internal representation of a .cfg.
     """
-
-    def __init__(self,
-        spec="Spec",
-        invariants: ss=None,
-        properties: ss=None,
-        constants=None,
-        model_values: ss=None    
-    ):
-        # All the above Nones are because we use sets and dicts for everything
-        self.spec = spec
-        self.invariants = invariants if invariants else set()
-        self.properties = properties if properties else set()
-        self.model_values = model_values if model_values else set()
-
-        if constants:
-            self.constants = constants
-        else:
-            self.constants = {}
-
-    def to_dict(self):
-        return {
-        "spec": self.spec,
-        "invariants": self.invariants,
-        "properties": self.properties,
-        "constants": self.constants,
-        "model_values": self.model_values,
-        }
-    def __repr__(self):
-        return str(self.to_dict())
+    spec: str = "Spec"
+    invariants: ss = field(default_factory=set)
+    properties: ss = field(default_factory=set)
+    constants: t.Dict[str, str] = field(default_factory=dict)
+    model_values: ss = field(default_factory=set)
 
     def merge(self, other: 'CFG') -> 'CFG':
-        """Merge:
+        """Merge two CFGs to get a new combined CFG.
+        New CFG is created, inputs are not modified
+
+        sets are unioned, dicts with shared keys use the value of `other`
         """
         out = CFG()
         out.invariants = self.invariants | other.invariants
@@ -60,33 +40,27 @@ class CFG:
         out.constants.update(other.constants)
         return out
 
-    def __eq__(self, other):
-        """Two CFGs are equal if all of their properties are equal."""
-        return self.to_dict() == other.to_dict()
-    
-
 def format_cfg(cfg: CFG) -> str:
-    # TODO the new CFG uses sets, not lists
-    # Have to switch them over to make them usable
-    cfg_dict = cfg.to_dict()
-    out = [f"SPECIFICATION {cfg_dict['spec']}"]
-    for inv in cfg_dict["invariants"]:
+    """Convert a CFG into a format that can be read by TLC."""
+    # XXX temporarily just using sorted to enforce ordering
+    out = [f"SPECIFICATION {cfg.spec}"]
+    for inv in sorted(cfg.invariants):
         out.append(f"INVARIANT {inv}")
 
-    for prop in cfg_dict["properties"]:
+    for prop in sorted(cfg.properties):
         out.append(f"PROPERTY {prop}")
 
-    if cfg_dict["model_values"]:
+    if cfg.model_values:
         out.append("\nCONSTANTS \\* model values")
-        for model in cfg_dict["model_values"]:
+        for model in sorted(cfg.model_values):
             out.append(f"  {model} = {model}")
 
 
     # TODO should this use <- instead of = ?
     # Would break the regex for reading in cfgs
-    if cfg_dict["constants"]:
+    if cfg.constants:
         out.append(r"CONSTANTS \* regular assignments")
-        for constant, value in cfg_dict["constants"].items():
+        for constant, value in cfg.constants.items():
             out.append(f"  {constant} = {value}")
     return "\n".join(out)
 
