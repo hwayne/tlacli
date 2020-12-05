@@ -18,7 +18,7 @@ class CFG:
     """
     Internal representation of a .cfg.
     """
-    spec: str = "Spec"
+    spec: t.Optional[str] = None
     invariants: ss = field(default_factory=set)
     properties: ss = field(default_factory=set)
     constants: t.Dict[str, str] = field(default_factory=dict)
@@ -34,7 +34,9 @@ class CFG:
         out.invariants = self.invariants | other.invariants
         out.properties = self.properties | other.properties
         out.model_values = self.model_values | other.model_values
-        
+
+        out.spec = other.spec or self.spec
+
         # if two CFGs def the same constant, we use the _second_ one
         out.constants.update(self.constants)
         out.constants.update(other.constants)
@@ -43,7 +45,8 @@ class CFG:
 def format_cfg(cfg: CFG) -> str:
     """Convert a CFG into a format that can be read by TLC."""
     # XXX temporarily just using sorted to enforce ordering
-    out = [f"SPECIFICATION {cfg.spec}"]
+    spec = cfg.spec or "Spec"
+    out = [f"SPECIFICATION {spec}"]
     for inv in sorted(cfg.invariants):
         out.append(f"INVARIANT {inv}")
 
