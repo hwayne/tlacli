@@ -95,7 +95,7 @@ def setup(parser: _SubParsersAction) -> None:
     tlc_args = parser_tlc.add_argument_group("tlc_args", "Runtime values for the TLC model checker")
     # https://lamport.azurewebsites.net/tla/tlc-options.html
 
-    cfg_args.add_argument("--spec", "--specification", default="Spec", help="The TLA+ specification operator, defaults to Spec")
+    cfg_args.add_argument("--spec", "--specification", default=None, help="The TLA+ specification operator, defaults to Spec")
     cfg_args.add_argument("--cfg", help="A template cfg for default values")
 
     # action=extend is python 3.8 only...
