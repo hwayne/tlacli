@@ -116,6 +116,7 @@ def setup(parser: _SubParsersAction) -> None:
 
     # TODO parser.add_argument("--cfg-del", action="store_true", help="If added, deletes cfg file after model checking is complete")
     # TODO for tlc arguments, use store_true and store_false. Might also want to move the parser config into a separate file because there are a lot
+    tlc_args.add_argument("--no-check-deadlocks", action="store_true", help="If added, disables deadlock checking for tlc")
 
     # Maybe the default should be half the threads?
     tlc_args.add_argument("--tlc-workers", default=cpu_count(), help="The number of worker threads to use (default is number of cpus)")
@@ -167,7 +168,8 @@ def run(args: Namespace):
         metadir= f"-metadir {state_dir}" # Removes the extraneous state folder
         config= f"-config {cfg_file}"
         workers = f"-workers {args.tlc_workers}"
-        script = f"java -jar {jar_path} {workers} {config} {metadir} -terse -cleanup {spec_path}"
+        additional_args = "-deadlock" if args.no_check_deadlocks else ""
+        script = f"java -jar {jar_path} {workers} {config} {metadir} -terse -cleanup {additional_args} {spec_path}"
 
         if args.show_script:
             print(script)
